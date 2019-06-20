@@ -1,6 +1,6 @@
 package org.launchcode.controllers;
 
-import org.launchcode.models.Job;
+import org.launchcode.models.*;
 import org.launchcode.models.forms.JobForm;
 import org.launchcode.models.data.JobData;
 import org.springframework.stereotype.Controller;
@@ -8,7 +8,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.Errors;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 
 /**
@@ -25,13 +27,8 @@ public class JobController {
     public String index(Model model, int id) {
 
         // TODO #1 - get the Job with the given ID and pass it into the view
-        model.addAttribute("name", jobData.findAll().get(id).getName());
-        model.addAttribute("employer", jobData.findAll().get(id).getEmployer());
-        model.addAttribute("location", jobData.findAll().get(id).getLocation());
-        model.addAttribute("position", jobData.findAll().get(id).getPositionType());
-        model.addAttribute("skill", jobData.findAll().get(id).getCoreCompetency());
-
-
+        Job job = jobData.findById(id);
+        model.addAttribute("job",job);
 
         return "job-detail";
     }
@@ -43,7 +40,7 @@ public class JobController {
     }
 
     @RequestMapping(value = "add", method = RequestMethod.POST)
-    public String add(Model model, @Valid JobForm jobForm, Errors errors) {
+    public String add(Model model, @Valid JobForm jobForm, Errors errors, RedirectAttributes attribute) {
 
         // TODO #6 - Validate the JobForm model, and if valid, create a
         // new Job and add it to the jobData data store. Then
@@ -54,24 +51,19 @@ public class JobController {
             return "new-job";
         }
 
-        Job newJob = new Job();
+        String name = jobForm.getName();
+        Employer employer = jobData.getEmployers().findById(jobForm.getEmployerId());
+        Location location = jobData.getLocations().findById(jobForm.getLocationId());
+        PositionType position = jobData.getPositionTypes().findById(jobForm.getPositionTypeId());
+        CoreCompetency skill = jobData.getCoreCompetencies().findById(jobForm.getCoreCompetencyId());
 
-        newJob.setName(jobForm.getName());
-        newJob.setEmployer(jobData.getEmployers().findById(jobForm.getEmployerId()));
-        newJob.setLocation(jobData.getLocations().findById(jobForm.getLocationId()));
-        newJob.setPositionType(jobData.getPositionTypes().findById(jobForm.getPositionTypeId()));
-        newJob.setCoreCompetency(jobData.getCoreCompetencies().findById(jobForm.getCoreCompetencyId()));
+        Job newJob = new Job(name,employer,location,position,skill);
 
-        //add newJobs to jobData
         jobData.add(newJob);
 
-        model.addAttribute("name", newJob.getName());
-        model.addAttribute("employer", newJob.getEmployer());
-        model.addAttribute("location", newJob.getLocation());
-        model.addAttribute("position", newJob.getPositionType());
-        model.addAttribute("skill", newJob.getCoreCompetency());
+        attribute.addAttribute("id", newJob.getId());
 
-        return "job-detail";
+        return "redirect:/job";
 
     }
 
